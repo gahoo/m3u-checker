@@ -38,18 +38,25 @@ def save_on_exit():
     content = m3u.to_m3u_plus_playlist()
     args.out.write(content)
 
+@atexit.register
+def save_log_on_exit():
+    content = failed.to_m3u_plus_playlist()
+    args.log.write(content)
+
 def main():
     bar = progressbar.ProgressBar(max_value=m3u.length())
     for i, entry in enumerate(m3u):
         bar.update(i)
         if not is_url_valid(entry.url):
-            print(entry, 'is not valid')
+            failed.append_channel(entry)
             m3u.remove_channel(i)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='IPTV playlist checker.')
     parser.add_argument('playlist', type=str, help='playlist for check')
     parser.add_argument('--out', type=argparse.FileType('w'), default=sys.stdout, help="filename")
+    parser.add_argument('--log', type=argparse.FileType('a'), default=sys.stderr, help="filename")
     args = parser.parse_args()
     m3u = playlist.loadf(args.playlist)
+    failed = playlist.M3UPlaylist()
     main()
